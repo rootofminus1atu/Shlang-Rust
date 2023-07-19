@@ -1,0 +1,59 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_expr(\"(1+2+b);\")"
+---
+BinaryNode(
+    Spanned {
+        unspanned: BinaryNode {
+            kind: ADD,
+            left: Value(
+                Spanned {
+                    unspanned: Num(
+                        1.0,
+                    ),
+                    span: (
+                        1,
+                        2,
+                    ),
+                },
+            ),
+            right: BinaryNode(
+                Spanned {
+                    unspanned: BinaryNode {
+                        kind: ADD,
+                        left: Value(
+                            Spanned {
+                                unspanned: Num(
+                                    2.0,
+                                ),
+                                span: (
+                                    3,
+                                    4,
+                                ),
+                            },
+                        ),
+                        right: Variable(
+                            Spanned {
+                                unspanned: Variable {
+                                    name: "b",
+                                },
+                                span: (
+                                    5,
+                                    6,
+                                ),
+                            },
+                        ),
+                    },
+                    span: (
+                        4,
+                        7,
+                    ),
+                },
+            ),
+        },
+        span: (
+            2,
+            7,
+        ),
+    },
+)

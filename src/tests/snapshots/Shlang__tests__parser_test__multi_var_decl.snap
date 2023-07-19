@@ -1,0 +1,48 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_full(\"var a; var a;\")"
+---
+Block {
+    body: [
+        Declaration(
+            Spanned {
+                unspanned: Declaration {
+                    var_name: "a",
+                    value: Value(
+                        Spanned {
+                            unspanned: Null,
+                            span: (
+                                4,
+                                5,
+                            ),
+                        },
+                    ),
+                },
+                span: (
+                    0,
+                    6,
+                ),
+            },
+        ),
+        Declaration(
+            Spanned {
+                unspanned: Declaration {
+                    var_name: "a",
+                    value: Value(
+                        Spanned {
+                            unspanned: Null,
+                            span: (
+                                11,
+                                12,
+                            ),
+                        },
+                    ),
+                },
+                span: (
+                    7,
+                    13,
+                ),
+            },
+        ),
+    ],
+}

@@ -1,0 +1,59 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_expr(\"!0 +(-0);\")"
+---
+BinaryNode(
+    Spanned {
+        unspanned: BinaryNode {
+            kind: ADD,
+            left: UnaryNode(
+                Spanned {
+                    unspanned: UnaryNode {
+                        kind: NOT,
+                        object: Value(
+                            Spanned {
+                                unspanned: Num(
+                                    0.0,
+                                ),
+                                span: (
+                                    1,
+                                    2,
+                                ),
+                            },
+                        ),
+                    },
+                    span: (
+                        1,
+                        2,
+                    ),
+                },
+            ),
+            right: UnaryNode(
+                Spanned {
+                    unspanned: UnaryNode {
+                        kind: NEGATIVE,
+                        object: Value(
+                            Spanned {
+                                unspanned: Num(
+                                    0.0,
+                                ),
+                                span: (
+                                    6,
+                                    7,
+                                ),
+                            },
+                        ),
+                    },
+                    span: (
+                        6,
+                        7,
+                    ),
+                },
+            ),
+        },
+        span: (
+            3,
+            9,
+        ),
+    },
+)

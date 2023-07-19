@@ -1,3 +1,4 @@
+use crate::spans::*;
 use std::collections::*;
 #[derive(Clone, Debug, PartialEq)]
 
@@ -6,7 +7,14 @@ pub enum Control {
     Result(Box<Value>, Type),
     Break,
 }
-
+impl From<Control> for Value {
+    fn from(x: Control) -> Self {
+        Value::Control(x)
+    }
+}
+pub trait Conv{
+    fn to_node(&self, span: Span)->Node;
+}
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Null,
@@ -29,6 +37,11 @@ impl Value {
             Value::Num(_) => return Type::Num,
             Value::Control(_) => return Type::Never,
         }
+    }
+}
+impl Conv for Value {
+    fn to_node(&self, span: Span)->Node {
+        Node::value(self.clone(), span)
     }
 }
 #[derive(Clone, Debug, PartialEq)]
@@ -67,62 +80,49 @@ pub struct BuiltinFunc {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Node {
-    Value(Box<Value>),
-    Block(Block),
-    DoBlock(DoBlock),
-    BinaryNode(BinaryNode),
-    UnaryNode(UnaryNode),
-    ResultNode(Box<Node>),
-    ReturnNode(Box<Node>),
-    BreakNode,
-    Declaration(Declaration),
-    Assignment(Assignment),
-    Variable(Variable),
-    Call(Call),
-    Branch(Branch),
-    Loop(Loop),
-    While(While),
+    Value(Spanned<Box<Value>>),
+    Block(Spanned<Block>),
+    DoBlock(Spanned<DoBlock>),
+    BinaryNode(Spanned<BinaryNode>),
+    UnaryNode(Spanned<UnaryNode>),
+    ResultNode(Spanned<Box<Node>>),
+    ReturnNode(Spanned<Box<Node>>),
+    BreakNode(Span),
+    Declaration(Spanned<Declaration>),
+    Assignment(Spanned<Assignment>),
+    Variable(Spanned<Variable>),
+    Call(Spanned<Call>),
+    Branch(Spanned<Branch>),
+    Loop(Spanned<Loop>),
+    While(Spanned<While>),
+}
+ 
+impl Node {
+    pub fn block(body: NodeStream, span: Span) -> Self {
+        return Node::Block(Spanned {
+            unspanned: Block {
+                body: Box::new(body),
+            },
+            span,
+        });
+    }
+    pub fn value(value: Value, span: Span) -> Self {
+        Node::Value(Spanned {
+            unspanned: Box::new(value),
+            span,
+        })
+    }
 }
 
-impl Node {
-    pub fn declaration(name: &str, value: Node) -> Self {
-        return Node::Declaration(Declaration {
-            var_name: String::from(name),
-            value: Box::new(value),
-        });
-    }
-    pub fn block(body: NodeStream) -> Self {
-        return Node::Block(Block {
-            body: Box::new(body),
-        });
-    }
-}
-impl From<Function> for Value {
-    fn from(x: Function) -> Self {
-        Value::Function(x)
-    }
-}
-impl From<Control> for Value {
-    fn from(x: Control) -> Self {
-        Value::Control(x)
-    }
-}
-impl From<Control> for Node {
-    fn from(x: Control) -> Self {
-        Node::Value(Box::new(Value::Control(x)))
-    }
-}
-impl From<Value> for Node {
-    fn from(x: Value) -> Self {
-        Node::Value(Box::new(x))
-    }
-}
 macro_rules! nodes_from {
     ($($name:ident)*) => {
         $(
-            impl ::core::convert::From<$name> for Node {
-                fn from(node: $name) -> Self {
-                    Self::$name(node)
+            impl Conv for $name {
+                fn to_node(&self,span:Span) -> Node {
+                    Node::$name(Spanned {
+                        unspanned: self.clone(),
+                        span
+                    })
                 }
             }
         )*

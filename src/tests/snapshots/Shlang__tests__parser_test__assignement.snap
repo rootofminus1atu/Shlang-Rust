@@ -1,0 +1,26 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_expr(\"b = 1;\")"
+---
+Assignment(
+    Spanned {
+        unspanned: Assignment {
+            var_name: "b",
+            value: Value(
+                Spanned {
+                    unspanned: Num(
+                        1.0,
+                    ),
+                    span: (
+                        4,
+                        5,
+                    ),
+                },
+            ),
+        },
+        span: (
+            0,
+            3,
+        ),
+    },
+)

@@ -1,0 +1,81 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_expr(\"((1+2)+(1+2));\")"
+---
+BinaryNode(
+    Spanned {
+        unspanned: BinaryNode {
+            kind: ADD,
+            left: BinaryNode(
+                Spanned {
+                    unspanned: BinaryNode {
+                        kind: ADD,
+                        left: Value(
+                            Spanned {
+                                unspanned: Num(
+                                    1.0,
+                                ),
+                                span: (
+                                    2,
+                                    3,
+                                ),
+                            },
+                        ),
+                        right: Value(
+                            Spanned {
+                                unspanned: Num(
+                                    2.0,
+                                ),
+                                span: (
+                                    4,
+                                    5,
+                                ),
+                            },
+                        ),
+                    },
+                    span: (
+                        3,
+                        6,
+                    ),
+                },
+            ),
+            right: BinaryNode(
+                Spanned {
+                    unspanned: BinaryNode {
+                        kind: ADD,
+                        left: Value(
+                            Spanned {
+                                unspanned: Num(
+                                    1.0,
+                                ),
+                                span: (
+                                    8,
+                                    9,
+                                ),
+                            },
+                        ),
+                        right: Value(
+                            Spanned {
+                                unspanned: Num(
+                                    2.0,
+                                ),
+                                span: (
+                                    10,
+                                    11,
+                                ),
+                            },
+                        ),
+                    },
+                    span: (
+                        9,
+                        12,
+                    ),
+                },
+            ),
+        },
+        span: (
+            6,
+            13,
+        ),
+    },
+)

@@ -1,0 +1,59 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_expr(\"!true + !true;\")"
+---
+BinaryNode(
+    Spanned {
+        unspanned: BinaryNode {
+            kind: ADD,
+            left: UnaryNode(
+                Spanned {
+                    unspanned: UnaryNode {
+                        kind: NOT,
+                        object: Value(
+                            Spanned {
+                                unspanned: Bool(
+                                    true,
+                                ),
+                                span: (
+                                    1,
+                                    5,
+                                ),
+                            },
+                        ),
+                    },
+                    span: (
+                        1,
+                        5,
+                    ),
+                },
+            ),
+            right: UnaryNode(
+                Spanned {
+                    unspanned: UnaryNode {
+                        kind: NOT,
+                        object: Value(
+                            Spanned {
+                                unspanned: Bool(
+                                    true,
+                                ),
+                                span: (
+                                    9,
+                                    13,
+                                ),
+                            },
+                        ),
+                    },
+                    span: (
+                        9,
+                        13,
+                    ),
+                },
+            ),
+        },
+        span: (
+            6,
+            14,
+        ),
+    },
+)

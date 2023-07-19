@@ -1,0 +1,26 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_expr(\"!(0);\")"
+---
+UnaryNode(
+    Spanned {
+        unspanned: UnaryNode {
+            kind: NOT,
+            object: Value(
+                Spanned {
+                    unspanned: Num(
+                        0.0,
+                    ),
+                    span: (
+                        2,
+                        3,
+                    ),
+                },
+            ),
+        },
+        span: (
+            1,
+            2,
+        ),
+    },
+)

@@ -1,0 +1,82 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_expr(\"a(1,1,1)+1;\")"
+---
+BinaryNode(
+    Spanned {
+        unspanned: BinaryNode {
+            kind: ADD,
+            left: Call(
+                Spanned {
+                    unspanned: Call {
+                        callee: Variable(
+                            Spanned {
+                                unspanned: Variable {
+                                    name: "a",
+                                },
+                                span: (
+                                    0,
+                                    1,
+                                ),
+                            },
+                        ),
+                        args: [
+                            Value(
+                                Spanned {
+                                    unspanned: Num(
+                                        1.0,
+                                    ),
+                                    span: (
+                                        2,
+                                        3,
+                                    ),
+                                },
+                            ),
+                            Value(
+                                Spanned {
+                                    unspanned: Num(
+                                        1.0,
+                                    ),
+                                    span: (
+                                        4,
+                                        5,
+                                    ),
+                                },
+                            ),
+                            Value(
+                                Spanned {
+                                    unspanned: Num(
+                                        1.0,
+                                    ),
+                                    span: (
+                                        6,
+                                        7,
+                                    ),
+                                },
+                            ),
+                        ],
+                    },
+                    span: (
+                        1,
+                        8,
+                    ),
+                },
+            ),
+            right: Value(
+                Spanned {
+                    unspanned: Num(
+                        1.0,
+                    ),
+                    span: (
+                        9,
+                        10,
+                    ),
+                },
+            ),
+        },
+        span: (
+            8,
+            11,
+        ),
+    },
+)

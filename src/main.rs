@@ -12,6 +12,7 @@ pub mod token_parser;
 pub mod tokens;
 pub mod tests;
 pub mod spans;
+pub mod errors;
 use token_lexer::Lexer;
 use token_parser::Parser;
 use interpreter::Interpreter;
@@ -46,7 +47,7 @@ fn lexer_rpl() {
                 break;
             }
             let some = tok.unwrap();
-            println!("{:?} | {:?}", some.clone(), parser.text(some));
+            println!("{:?} | {:?}", some.clone(), parser.text(&some));
         }
     }
 }
@@ -64,7 +65,7 @@ fn full_rpl() {
         let mut parser = Parser::new(source.as_str());
         let ast = parser.batch_parse();
         println!("{:#?}", &ast);
-        let mut interpreter = Interpreter::new(ast);
+        let mut interpreter = Interpreter::new(ast,source);
         interpreter.execute()
     }
 }

@@ -1,0 +1,60 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_expr(\"a((1),1,1);\")"
+---
+Call(
+    Spanned {
+        unspanned: Call {
+            callee: Variable(
+                Spanned {
+                    unspanned: Variable {
+                        name: "a",
+                    },
+                    span: (
+                        0,
+                        1,
+                    ),
+                },
+            ),
+            args: [
+                Value(
+                    Spanned {
+                        unspanned: Num(
+                            1.0,
+                        ),
+                        span: (
+                            3,
+                            4,
+                        ),
+                    },
+                ),
+                Value(
+                    Spanned {
+                        unspanned: Num(
+                            1.0,
+                        ),
+                        span: (
+                            6,
+                            7,
+                        ),
+                    },
+                ),
+                Value(
+                    Spanned {
+                        unspanned: Num(
+                            1.0,
+                        ),
+                        span: (
+                            8,
+                            9,
+                        ),
+                    },
+                ),
+            ],
+        },
+        span: (
+            1,
+            10,
+        ),
+    },
+)

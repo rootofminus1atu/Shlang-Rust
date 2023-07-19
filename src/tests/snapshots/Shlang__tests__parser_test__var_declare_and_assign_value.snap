@@ -1,0 +1,30 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_full(\"var a = 2;\")"
+---
+Block {
+    body: [
+        Declaration(
+            Spanned {
+                unspanned: Declaration {
+                    var_name: "a",
+                    value: Value(
+                        Spanned {
+                            unspanned: Num(
+                                2.0,
+                            ),
+                            span: (
+                                8,
+                                9,
+                            ),
+                        },
+                    ),
+                },
+                span: (
+                    0,
+                    10,
+                ),
+            },
+        ),
+    ],
+}

@@ -1,0 +1,82 @@
+---
+source: src/tests/parser_test.rs
+expression: "parse_expr(\"a((1+2),true,\\\"1\\\");\")"
+---
+Call(
+    Spanned {
+        unspanned: Call {
+            callee: Variable(
+                Spanned {
+                    unspanned: Variable {
+                        name: "a",
+                    },
+                    span: (
+                        0,
+                        1,
+                    ),
+                },
+            ),
+            args: [
+                BinaryNode(
+                    Spanned {
+                        unspanned: BinaryNode {
+                            kind: ADD,
+                            left: Value(
+                                Spanned {
+                                    unspanned: Num(
+                                        1.0,
+                                    ),
+                                    span: (
+                                        3,
+                                        4,
+                                    ),
+                                },
+                            ),
+                            right: Value(
+                                Spanned {
+                                    unspanned: Num(
+                                        2.0,
+                                    ),
+                                    span: (
+                                        5,
+                                        6,
+                                    ),
+                                },
+                            ),
+                        },
+                        span: (
+                            4,
+                            7,
+                        ),
+                    },
+                ),
+                Value(
+                    Spanned {
+                        unspanned: Bool(
+                            true,
+                        ),
+                        span: (
+                            8,
+                            12,
+                        ),
+                    },
+                ),
+                Value(
+                    Spanned {
+                        unspanned: Str(
+                            "1",
+                        ),
+                        span: (
+                            14,
+                            15,
+                        ),
+                    },
+                ),
+            ],
+        },
+        span: (
+            1,
+            17,
+        ),
+    },
+)
