@@ -87,6 +87,7 @@ impl LangError for ParseError {
 #[derive(Debug)]
 pub enum InterpreterError {
     MixedTypes(Type, Type, Span),
+    InvalidReturnType(Type, Type, Span),
     InvalidType(Vec<Type>, Type, Span),
     InvalidControl(Span),
     VoidAssignment(Span),
@@ -102,7 +103,9 @@ impl LangError for InterpreterError {
         use InterpreterError::*;
         match &self {
             MixedTypes(first, last, _) => format!("Mixed types: {first:?} and {last:?}"),
-
+            InvalidReturnType(first, got, _) => {
+                format!("Invalid return type: expected {first:?} but got {got:?}")
+            }
             InvalidType(accepted, got, _) => {
                 let opts = String::from_iter(
                     format!("{accepted:?}")
@@ -134,6 +137,7 @@ impl LangError for InterpreterError {
         let span = match &self {
             MixedTypes(_, _, span) => span,
             InvalidType(_, _, span) => span,
+            InvalidReturnType(_, _, span) => span,
             InvalidControl(span) => span,
             VoidAssignment(span) => span,
             NonExistentVar(_, span) => span,

@@ -69,21 +69,25 @@ pub struct Struct {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Function {
     pub block: BlockRef,
-    pub args: Vec<String>,
+    pub args: Vec<(String, Type)>,
+    pub ret_type: Type,
 }
 impl Function {
-    pub fn new(block: BlockSpan, args: Vec<String>) -> Self {
+    pub fn new(block: BlockSpan, args: Vec<(String, Type)>, ret_type: Type) -> Self {
         Self {
             block: Box::new(block),
             args,
+            ret_type,
         }
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BuiltinFunc {
-    pub function: fn(VarMap, ValueStream) -> Value,
-    pub arg_size: i16,
+    pub function: fn(TypedValue, ValueStream) -> Value,
+    pub inf: bool,
+    pub ptypes: Vec<Type>,
+    pub ret_type: Type,
 }
 impl From<Function> for Value {
     fn from(x: Function) -> Self {
@@ -106,6 +110,7 @@ pub enum Type {
     Str,
     Function,
     Never,
+    Any,
     Ref(u32),
     UserDefined(String),
 }
@@ -117,7 +122,25 @@ impl Type {
         matches!(self, Self::Bool | Self::Num | Self::Int | Self::Float)
     }
 }
-
+impl ToString for Type {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Void => "void",
+            Self::Null => "null",
+            Self::Function => "func",
+            Self::Never => "never",
+            Self::Bool => "bool",
+            Self::Num => "num",
+            Self::Int => "int",
+            Self::Float => "float",
+            Self::Str => "str",
+            Self::UserDefined(id) => id,
+            Self::Ref(_) => "ref",
+            _ => "unnamed",
+        }
+        .to_string()
+    }
+}
 #[derive(Clone, Debug, PartialEq)]
 pub enum Node {
     Value(Box<Value>),
@@ -286,6 +309,7 @@ pub struct UnaryNode {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Declaration {
     pub var_name: String,
+    pub var_type: Type,
     pub value: NodeRef,
 }
 
@@ -370,7 +394,11 @@ pub struct While {
     pub condition: NodeRef,
     pub proc: BlockRef,
 }
-pub type VarMap = HashMap<String, Value>;
+pub type VarMap = HashMap<String, TypedValue>;
+pub enum AssignmentErr {
+    NotFound,
+    MixedTypes,
+}
 #[derive(Clone, Debug, PartialEq)]
 pub struct Scope {
     pub parent: Option<Box<Scope>>,
@@ -379,7 +407,7 @@ pub struct Scope {
 }
 
 impl Scope {
-    pub fn get_var(&self, var_name: &String) -> Option<Value> {
+    pub fn get_var(&self, var_name: &String) -> Option<TypedValue> {
         if let Some(var) = self.vars.get(var_name) {
             return Some(var.clone());
         }
@@ -397,8 +425,11 @@ impl Scope {
         }
         None
     }
-    pub fn define(&mut self, var_name: String, val: Value) {
-        if let Value::Struct(obj) = &val {
+    pub fn define_struct(&mut self, struct_name: String, val: Struct) {
+        self.structs.insert(struct_name, val);
+    }
+    pub fn define(&mut self, var_name: String, val: TypedValue) {
+        if let Value::Struct(obj) = &val.0 {
             self.structs.insert(var_name.clone(), obj.clone());
         }
         self.vars.insert(var_name, val);
@@ -417,14 +448,30 @@ impl Scope {
             structs: HashMap::from([]),
         }
     }
-    pub fn assign(&mut self, var_name: String, value: Value) -> Option<Value> {
+    pub fn assign(
+        &mut self,
+        var_name: String,
+        value: TypedValue,
+    ) -> Result<TypedValue, AssignmentErr> {
         if let Some(var) = self.vars.get_mut(&var_name) {
-            *var = value;
-            return Some(var.clone());
+            if var.1 == Type::Any {
+                *var = (value.0, Type::Any);
+                return Ok(var.clone());
+            }
+            let resolved = if value.1 == Type::Any {
+                value.0.get_type()
+            } else {
+                value.1
+            };
+            if resolved != var.1 {
+                return Err(AssignmentErr::MixedTypes);
+            }
+            *var = (value.0, resolved);
+            return Ok(var.clone());
         }
         if let Some(parent) = &mut self.parent {
             return parent.assign(var_name, value);
         }
-        None
+        return Err(AssignmentErr::NotFound);
     }
 }

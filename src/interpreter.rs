@@ -194,7 +194,7 @@ impl Interpreter {
     fn declare(&mut self, request: Declaration, parent: &mut Scope) -> EvalResult {
         let init_val = self.eval_node(&request.value, parent)?;
         let unwrapped = self.unwrap_var(init_val, request.value.span)?;
-        parent.define(request.var_name, unwrapped.0);
+        parent.define(request.var_name, unwrapped);
         VOID
     }
     fn get_struct_id(&self, val: &Value) -> u32 {
@@ -237,8 +237,8 @@ impl Interpreter {
         target: &mut Scope,
     ) -> EvalResult {
         if target
-            .assign(name.clone(), self.unwrap_var(value, span)?.0)
-            .is_none()
+            .assign(name.clone(), self.unwrap_var(value, span)?)
+            .is_err()
         {
             return Err(IError::InvalidAssignment(name, span));
         }
@@ -263,45 +263,48 @@ impl Interpreter {
         let Some(result) = maybe_result else {
             return Err(IError::NonExistentVar(var.name, span));
         };
-        let res_type = result.get_type();
-        Ok((result, res_type))
+        Ok(result)
     }
     fn eval_var(&self, var: Variable, span: Span, env: &Scope) -> EvalResult {
         let maybe_result = env.get_var(&var.name);
         let Some(result) = maybe_result else {
             return self.default_scope(var, span);
         };
-        let res_type = result.get_type();
-        Ok((result, res_type))
+        Ok(result)
     }
     fn call_builtin(
         &mut self,
         called: BuiltinFunc,
-        arg_values: ValueStream,
+        arg_values: Vec<TypedValue>,
         span: Span,
         parent: &mut Scope,
+        this:Option<TypedValue>
     ) -> EvalResult {
-        if called.arg_size != -1 && arg_values.len() as i16 != called.arg_size {
-            return Err(IError::InvalidArgSize(called.arg_size as u32, arg_values.len() as u32, span));
+        if !called.inf && arg_values.len() != called.ptypes.len() {
+            return Err(IError::InvalidArgSize(called.ptypes.len() as u32, arg_values.len() as u32, span));
         }
-        let result = (called.function)(parent.vars.clone(), arg_values);
+        let result = (called.function)(this.unwrap_or((Value::Void,Type::Void)), arg_values);
         let result_type = result.get_type();
         Ok((result, result_type))
     }
     fn build_args(
         &mut self,
         func: &Function,
-        arg_spans: Vec<Span>,
-        arg_values: ValueStream,
+        args: Vec<Spanned<TypedValue>>,
     ) -> BlockSpan {
         let mut arg_decl: NodeStream = vec![];
         let mut func_block = func.block.unspanned.clone();
-        for (index, name) in func.args.iter().enumerate() {
-            let span = arg_spans[index];
-            let var = Box::new(NodeSpan::new(arg_values[index].clone().into(), span));
+        for (index, param) in func.args.iter().enumerate() {
+            let given = args[index];
+            let span = given.span;
+            if given.unspanned.1 != param.1{
+                panic!("invalid call types")
+            }
+            let var = Box::new(NodeSpan::new(given.unspanned.0.into(), span));
             arg_decl.push(
                 Declaration {
-                    var_name: name.to_string(),
+                    var_name: param.0.to_string(),
+                    var_type:param.1,
                     value: var,
                 }
                 .to_nodespan(span),
@@ -313,47 +316,49 @@ impl Interpreter {
     fn call_func(
         &mut self,
         mut called: Function,
-        arg_values: ValueStream,
-        arg_spans: Vec<Span>,
+        args: Vec<Spanned<TypedValue>>,
         span: Span,
         parent: &mut Scope,
     ) -> EvalResult {
-        if arg_values.len() != called.args.len() {
-            return Err(IError::InvalidArgSize(called.args.len() as u32, arg_values.len() as u32, span));
+        if args.len() != called.args.len() {
+            return Err(IError::InvalidArgSize(called.args.len() as u32, args.len() as u32, span));
         }
-        called.block = self.build_args(&called, arg_spans, arg_values).boxed();
+        called.block = self.build_args(&called, args).boxed();
         let (result, result_type) = self.eval_block(*called.block, parent)?;
         let Value::Control(flow) = result else {
             return Ok((result,result_type));
         };
-        match flow {
-            Control::Return(val, kind) => Ok((*val, kind)),
-            Control::Result(val, kind) => Ok((*val, kind)),
-            _ => Err(IError::InvalidControl(span)),
-            
+        let ret = match flow {
+            Control::Return(val, kind) => (*val, kind),
+            Control::Result(val, kind) => (*val, kind),
+            _ => return Err(IError::InvalidControl(span)),  
+        };
+        if ret.1 != called.ret_type{
+            return Err(InterpreterError::InvalidReturnType(called.ret_type, ret.1, span));
         }
+        Ok(ret)
     }
-    fn eval_call(&mut self, request: Call, base_env: &mut Scope, parent: &mut Scope) -> EvalResult {
+    fn eval_call(&mut self, request: Call, base_env: &mut Scope, parent: &mut Scope,this:Option<TypedValue>) -> EvalResult {
         let (func_val, kind) = self.eval_node(&request.callee, parent)?;
         if kind != Type::Function {
             return Err(IError::InvalidType(vec![Type::Function], kind, request.callee.span,));
         }
         let call_args = *request.args;
-        let mut arg_values: ValueStream = vec![];
-        let mut arg_spans: Vec<Span> = vec![];
-        for arg in call_args {
-            arg_spans.push(arg.span);
-            let argument = self.eval_node(&arg, base_env)?.0;
+        let mut args: Vec<Spanned<TypedValue>> = vec![];
+        let mut arg_values:Vec<TypedValue> = vec![];
+        for (index,arg) in call_args.iter().enumerate() {
+            let argument = self.eval_node(&arg, base_env)?;
             arg_values.push(argument);
+            args.push(Spanned::new(argument,arg.span));
         }
-        let arg_span = if !arg_spans.is_empty() {
-            (request.callee.span.1 + 1, arg_spans.last().unwrap().1)
+        let arg_span = if !args.is_empty() {
+            (request.callee.span.1 + 1, args.last().unwrap().span.1)
         } else {
             (request.callee.span.1 + 1, request.callee.span.1 + 2)
         };
         match func_val {
-            Value::BuiltinFunc(func) => self.call_builtin(func, arg_values, arg_span, parent),
-            Value::Function(called) => self.call_func(called, arg_values, arg_spans, request.callee.span, parent),
+            Value::BuiltinFunc(func) => self.call_builtin(func, arg_values, arg_span, parent,this),
+            Value::Function(called) => self.call_func(called, args, request.callee.span, parent),
             _ => panic!(),
         }
     }
@@ -402,16 +407,17 @@ impl Interpreter {
         requested: NodeSpan,
         base_env: &mut Scope,
         parent: &mut Scope,
+        self_val:Option<TypedValue>
     ) -> EvalResult {
         match requested.unspanned {
             Node::FieldAccess(access) => self.eval_fieldacess(access, base_env, parent),
-            Node::Call(request) => self.eval_call(request, base_env, parent),
+            Node::Call(request) => self.eval_call(request, base_env, parent,self_val),
             _ => self.eval_node(&requested, parent),
         }
     }
     fn access_struct(&mut self, id: u32, requested: NodeSpan, base_env: &mut Scope) -> EvalResult {
         let Value::Struct(mut obj) = self.heap.get(&id).unwrap().clone() else {panic!("IMPROVE ME")};
-        let result = self.eval_access_request(requested, base_env, &mut obj.env)?;
+        let result = self.eval_access_request(requested, base_env, &mut obj.env,None)?;
         self.heap.insert(id, Value::Struct(obj));
         Ok(result)
     }
@@ -424,7 +430,7 @@ impl Interpreter {
         let target = self.eval_node(&request.target, parent)?;
         match target.0 {
             Value::StructRef(id) => self.access_struct(id, *request.requested, base_env),
-            Value::Str(val) => self.eval_access_request(*request.requested, base_env, &mut defaults::str_struct(val).env),
+            Value::Str(val) => self.eval_access_request(*request.requested, base_env, &mut defaults::str_struct().env,Some(target)),
             a => panic!("{a:?}"),
         }
     }
@@ -439,7 +445,7 @@ impl Interpreter {
             if !obj.env.vars.contains_key(&k) {
                 panic!("Atempted to assign to non existent struct field")
             }
-            let result = self.eval_node(&v, parent)?.0;
+            let result = self.eval_node(&v, parent)?;
             obj.env.vars.insert(k, result);
         }
         Ok((Value::Struct(obj.clone()), Type::UserDefined(obj.id)))
@@ -462,9 +468,8 @@ impl Interpreter {
             env: struct_env,
         };
         strct.env.structs.insert("Self".to_string(), strct.clone());
-        let struct_val = Value::Struct(strct.clone());
-        parent.define(obj.name, struct_val.clone());
-        let id = self.heap_define(struct_val);
+        parent.define_struct(obj.name, strct.clone());
+        let id = self.heap_define(Value::Struct(strct));
         Ok((Value::StructRef(id), Type::Ref(id)))
     }
 
@@ -482,7 +487,7 @@ impl Interpreter {
             }
             Node::Block(body) => self.eval_block(body, parent),
             Node::Variable(var) => self.eval_var(var, span, parent),
-            Node::Call(request) => self.eval_call(request, &mut parent.clone(), parent),
+            Node::Call(request) => self.eval_call(request, &mut parent.clone(), parent,None),
             Node::UnaryNode(unary_op) => {
                 let (target, target_type) = self.eval_node(&unary_op.object, parent)?;
                 self.unary_calc(unary_op, (target, target_type))

@@ -153,15 +153,17 @@ impl<'input> Parser<'input, TokenIter<'input>> {
         let Some(last) = self.peek() else {todo!()};
         Declaration {
             var_name,
+            var_type: Type::Null,
             value: Value::Null.to_nodespan(first.span).boxed(),
         }
         .to_nodespan((first.span.0, last.span.1))
     }
-    fn var_decl(&mut self, var_name: String, name_ident: Token) -> ParseResult {
+    fn untyped_var_decl(&mut self, var_name: String, name_ident: Token) -> ParseResult {
         let last = self.next();
         let val = self.parse_expr()?;
         Ok(Declaration {
             var_name,
+            var_type: Type::Any,
             value: val.boxed(),
         }
         .to_nodespan((name_ident.span.0, last.unwrap().span.1)))
@@ -172,7 +174,7 @@ impl<'input> Parser<'input, TokenIter<'input>> {
         self.next();
         match self.peek_some()?.kind {
             TokenType::SEMICOLON => return Ok(self.empty_var_decl(ident, var_name)),
-            TokenType::EQUAL => return self.var_decl(var_name, ident),
+            TokenType::EQUAL => return self.untyped_var_decl(var_name, ident),
             _ => {}
         }
         Err(ParseError::UnexpectedToken(self.peek_some()?))
