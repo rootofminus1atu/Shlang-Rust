@@ -40,25 +40,27 @@ impl<'a> Lexer<'a> {
                 break;
             }
 
-            if val.eq(&'.') {
-                let Some(next) = self.peek_next() else {
-                    panic!("Invalid Number");
-                };
-                if !next.is_ascii_digit() {
-                    break;
-                }
-                dot_count += 1;
+            if val != '.' {
+                current = self.peek_advance();
+                continue;
             }
+            let Some(next) = self.peek_next() else {
+                panic!("Invalid Number");
+            };
+            if !next.is_ascii_digit() {
+                break;
+            }
+            dot_count += 1;
             current = self.peek_advance();
         }
         if dot_count > 1 {
-            panic!("Invalid Number");
+            panic!("Invalid Float");
         }
         let is_float = dot_count != 0;
         if is_float {
-            return Token::new(TokenType::NUM, (start - 1, self.index()));
+            return Token::new(TokenType::Float, (start - 1, self.index()));
         }
-        Token::new(TokenType::NUM, (start - 1, self.index()))
+        Token::new(TokenType::Int, (start - 1, self.index()))
     }
     fn ident(&mut self) -> Token {
         let start = self.index() - 1;
@@ -72,7 +74,7 @@ impl<'a> Lexer<'a> {
         let stop = self.index();
         let span = &self.source[start..stop];
         let Some(keyword) = tokens::map_keyword(span.to_string()) else {
-            return Token::new(TokenType::IDENTIFIER, (start, stop));
+            return Token::new(TokenType::Identifier, (start, stop));
         };
         Token::new(keyword, (start, stop))
     }
@@ -94,7 +96,7 @@ impl<'a> Lexer<'a> {
         }
 
         let stop = self.index() - 1;
-        Some(Token::new(TokenType::STR, (start, stop)))
+        Some(Token::new(TokenType::Str, (start, stop)))
     }
     fn push_advance(&mut self, kind: TokenType, range: (usize, usize)) -> Token {
         self.advance();
@@ -117,29 +119,29 @@ impl<'a> Lexer<'a> {
         let last = self.advance()?;
         let range = (start, start + 1);
         match last {
-            '.' => Some(Token::new(TokenType::DOT, range)),
-            ',' => Some(Token::new(TokenType::COMMA, range)),
-            '{' => Some(Token::new(TokenType::LBRACE, range)),
-            '}' => Some(Token::new(TokenType::RBRACE, range)),
-            '(' => Some(Token::new(TokenType::LPAREN, range)),
-            ')' => Some(Token::new(TokenType::RPAREN, range)),
-            '[' => Some(Token::new(TokenType::LBRACK, range)),
-            ']' => Some(Token::new(TokenType::RBRACK, range)),
-            '%' => Some(Token::new(TokenType::PERCENT, range)),
-            ':' => Some(Token::new(TokenType::COLON, range)),
-            ';' => Some(Token::new(TokenType::SEMICOLON, range)),
-            '|' => Some(Token::new(TokenType::PIPE, range)),
-            '&' => Some(Token::new(TokenType::AMPERSAND, range)),
+            '.' => Some(Token::new(TokenType::Dot, range)),
+            ',' => Some(Token::new(TokenType::Comma, range)),
+            '{' => Some(Token::new(TokenType::LBrace, range)),
+            '}' => Some(Token::new(TokenType::Rbrace, range)),
+            '(' => Some(Token::new(TokenType::Lparen, range)),
+            ')' => Some(Token::new(TokenType::Rparen, range)),
+            '[' => Some(Token::new(TokenType::Lbrack, range)),
+            ']' => Some(Token::new(TokenType::Rbrack, range)),
+            '%' => Some(Token::new(TokenType::Percent, range)),
+            ':' => Some(Token::new(TokenType::Colon, range)),
+            ';' => Some(Token::new(TokenType::Semicolon, range)),
             '"' => self.str('"'),
             '\'' => self.str('\''),
-            '+' => self.multi_char_token('=', TokenType::PLUS, TokenType::PLUS_EQUAL, start),
-            '*' => self.multi_char_token('=', TokenType::STAR, TokenType::STAR_EQUAL, start),
-            '/' => self.multi_char_token('=', TokenType::SLASH, TokenType::SLASH_EQUAL, start),
-            '-' => self.multi_char_token('=', TokenType::MINUS, TokenType::MINUS_EQUAL, start),
-            '!' => self.multi_char_token('=', TokenType::BANG, TokenType::BANG_EQUAL, start),
-            '<' => self.multi_char_token('=', TokenType::LESSER, TokenType::LESSER_EQUAL, start),
-            '>' => self.multi_char_token('=', TokenType::GREATER, TokenType::GREATER_EQUAL, start),
-            '=' => self.multi_char_token('=', TokenType::EQUAL, TokenType::DOUBLE_EQUAL, start),
+            '|' => self.multi_char_token('|', TokenType::Pipe, TokenType::DoublePipe, start),
+            '&' => self.multi_char_token('&', TokenType::Ampersand, TokenType::DoubleAmper, start),
+            '+' => self.multi_char_token('=', TokenType::Plus, TokenType::PlusEqual, start),
+            '*' => self.multi_char_token('=', TokenType::Star, TokenType::StarEqual, start),
+            '/' => self.multi_char_token('=', TokenType::Slash, TokenType::SlashEqual, start),
+            '-' => self.multi_char_token('=', TokenType::Minus, TokenType::MinusEqual, start),
+            '!' => self.multi_char_token('=', TokenType::Bang, TokenType::BangEqual, start),
+            '<' => self.multi_char_token('=', TokenType::Lesser, TokenType::LesserEqual, start),
+            '>' => self.multi_char_token('=', TokenType::Greater, TokenType::GreaterEqual, start),
+            '=' => self.multi_char_token('=', TokenType::Equal, TokenType::DoubleEqual, start),
             '#' => {
                 if self.current_is('*') {
                     return self.multi_comment();

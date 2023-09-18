@@ -41,72 +41,65 @@ impl ErrorBuilder {
 }
 pub trait LangError {
     fn print_msg(&self, err_out: ErrorBuilder);
-    fn msg(&self) -> String;
 }
-
+impl<T: ToString> LangError for Spanned<T> {
+    fn print_msg(&self, err_out: ErrorBuilder) {
+        err_out.emit(self.unspanned.to_string().as_str(), self.span);
+    }
+}
 #[derive(Clone, Debug)]
 pub enum ParseError {
-    InvalidToken(TokenType, Token),
-    UnexpectedToken(Token),
-    UnexpectedToplevel(Token),
-    UnterminatedParetheses(Token),
+    InvalidToken(TokenType, TokenType),
+    UnexpectedToken,
+    UnexpectedToplevel,
+    UnterminatedParetheses,
     UnexpectedStreamEnd,
-    UnexpectedFieldNode(NodeSpan),
+    UnexpectedFieldNode(Expr),
 }
-impl LangError for ParseError {
-    fn msg(&self) -> String {
-        use ParseError::*;
+impl ToString for ParseError {
+    fn to_string(&self) -> String {
+        use ParseError as PErr;
         match &self {
-            InvalidToken(expected, got) => {
-                format!("expected token {expected:?} but got token {:?}", got.kind)
+            PErr::InvalidToken(expected, got) => {
+                format!("expected token {expected:?} but got token {:?}", got)
             }
-            UnexpectedToken(_) => "Unexpected token".to_string(),
-            UnexpectedToplevel(_) => "Unexpected token at toplevel".to_string(),
-            UnexpectedStreamEnd => "Expected To find another token but none was found".to_string(),
-            UnterminatedParetheses(_) => "Unterminated parentheses".to_string(),
-            UnexpectedFieldNode(_) => "Invalid Node in struct feilds".to_string(),
+            PErr::UnexpectedToken => "Unexpected token".to_string(),
+            PErr::UnexpectedToplevel => "Unexpected token at toplevel".to_string(),
+            PErr::UnexpectedStreamEnd => {
+                "Expected To find another token but none was found".to_string()
+            }
+            PErr::UnterminatedParetheses => "Unterminated parentheses".to_string(),
+            PErr::UnexpectedFieldNode(_) => "Invalid Node in struct feilds".to_string(),
         }
     }
-    fn print_msg(&self, err_out: ErrorBuilder) {
-        use ParseError::*;
-
-        let span = match &self {
-            InvalidToken(_, got) => got.span,
-            UnexpectedToken(token) => token.span,
-            UnexpectedToplevel(token) => token.span,
-            UnexpectedStreamEnd => {
-                eprintln!("{} {}", "ERROR".red(), self.msg());
-                return;
-            }
-            UnterminatedParetheses(paren) => paren.span,
-            UnexpectedFieldNode(node) => node.span,
-        };
-        err_out.emit(self.msg().as_str(), span);
-    }
 }
+pub type SpannedParseErr = Spanned<ParseError>;
+
 #[derive(Debug)]
 pub enum InterpreterError {
-    MixedTypes(Type, Type, Span),
-    InvalidReturnType(Type, Type, Span),
-    InvalidType(Vec<Type>, Type, Span),
-    InvalidControl(Span),
-    VoidAssignment(Span),
-    NonExistentVar(String, Span),
-    InvalidAssignment(String, Span),
-    InvalidConstructor(Span),
-    InvalidOp(BinaryOp, Type, Span),
-    InvalidArgSize(u32, u32, Span),
-    InvalidBinary(Type, Span),
+    MixedTypes(Type, Type),
+    InvalidReturnType(Type, Type),
+    InvalidType(Vec<Type>, Type),
+    InvalidControl,
+    VoidAssignment,
+    NonExistentVar(String),
+    InvalidAssignment(String),
+    InvalidConstructor,
+    InvalidOp(BinaryOp, Type),
+    InvalidArgSize(u32, u32),
+    InvalidBinary(Type),
 }
-impl LangError for InterpreterError {
-    fn msg(&self) -> String {
-        use InterpreterError::*;
+pub type SpannedInterpreterErr = Spanned<InterpreterError>;
+
+impl ToString for InterpreterError {
+    fn to_string(&self) -> String {
+        use InterpreterError as IErr;
         match &self {
-            MixedTypes(first, last, _) => format!("Mixed types: {first:?} and {last:?}"),
-            InvalidReturnType(first, got, _) => {
+            IErr::MixedTypes(first, last) => format!("Mixed types: {first:?} and {last:?}"),
+            IErr::InvalidReturnType(first, got) => {
                 format!("Invalid return type: expected {first:?} but got {got:?}")
             }
-            InvalidType(accepted, got, _) => {
+            IErr::InvalidType(accepted, got) => {
                 let opts = String::from_iter(
                     format!("{accepted:?}")
                         .chars()
@@ -115,38 +108,21 @@ impl LangError for InterpreterError {
                 .replace(',', " or ");
                 format!("Invalid Types expected: {opts:?} but got {got:?}")
             }
-            InvalidControl(_) => "Invalid control flow node".to_string(),
-            VoidAssignment(_) => "Attempted to assign void to a variable".to_string(),
-            NonExistentVar(name, _) => {
+            IErr::InvalidControl => "Invalid control flow node".to_string(),
+            IErr::VoidAssignment => "Attempted to assign void to a variable".to_string(),
+            IErr::NonExistentVar(name) => {
                 "Couldnt find variable with name: ".to_string() + name.as_str()
             }
-            InvalidAssignment(name, _) => {
+            IErr::InvalidAssignment(name) => {
                 "Attempted to assign to non existent variable with name: ".to_string()
                     + name.as_str()
             }
-            InvalidConstructor(_) => "Attempted to construct a non existent struct".to_string(),
-            InvalidOp(op, inv, _) => format!("Cant do {op:?} operation with type {inv:?}"),
-            InvalidArgSize(expected, got, _) => format!(
+            IErr::InvalidConstructor => "Attempted to construct a non existent struct".to_string(),
+            IErr::InvalidOp(op, inv) => format!("Cant do {op:?} operation with type {inv:?}"),
+            IErr::InvalidArgSize(expected, got) => format!(
                 "Invalid args size expected {expected:?} arguments but got {got:?} arguments"
             ),
-            InvalidBinary(got, _) => format!("Invalid type in binary operation: {:?}", got),
+            IErr::InvalidBinary(got) => format!("Invalid type in binary operation: {:?}", got),
         }
-    }
-    fn print_msg(&self, err_out: ErrorBuilder) {
-        use InterpreterError::*;
-        let span = match &self {
-            MixedTypes(_, _, span) => span,
-            InvalidType(_, _, span) => span,
-            InvalidReturnType(_, _, span) => span,
-            InvalidControl(span) => span,
-            VoidAssignment(span) => span,
-            NonExistentVar(_, span) => span,
-            InvalidAssignment(_, span) => span,
-            InvalidConstructor(span) => span,
-            InvalidOp(_, _, span) => span,
-            InvalidArgSize(_, _, span) => span,
-            InvalidBinary(_, span) => span,
-        };
-        err_out.emit(self.msg().as_str(), *span);
     }
 }

@@ -1,116 +1,87 @@
 use crate::spans::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenType {
-    STR,
-    NUM,
-    INT,
-    FLOAT,
-    IDENTIFIER,
-    SEMICOLON,
-    PLUS,
-    MINUS,
-    STAR,
-    SLASH,
-    LPAREN,
-    RPAREN,
-    LBRACE,
-    RBRACE,
-    LBRACK,
-    RBRACK,
-    EQUAL,
-    DOT,
-    LESSER,
-    GREATER,
-    GREATER_EQUAL,
-    LESSER_EQUAL,
-    COMMA,
-    COLON,
-    BANG,
-    PERCENT,
-    DOUBLE_EQUAL,
-    BANG_EQUAL,
-    AND,
-    NOT,
-    OR,
-    IF,
-    ELSE,
-    FUNC,
-    RETURN,
-    LOOP,
-    WHILE,
-    BREAK,
-    FALSE,
-    TRUE,
-    VAR,
-    DO,
-    AMPERSAND,
-    PIPE,
-    NULL,
-    STRUCT,
-    CONTINUE,
-    PLUS_EQUAL,
-    MINUS_EQUAL,
-    STAR_EQUAL,
-    SLASH_EQUAL,
-    NEW,
+    Str,
+    Int,
+    Float,
+    Identifier,
+    Semicolon,
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Lparen,
+    Rparen,
+    LBrace,
+    Rbrace,
+    Lbrack,
+    Rbrack,
+    Equal,
+    Dot,
+    Lesser,
+    Greater,
+    GreaterEqual,
+    LesserEqual,
+    Comma,
+    Colon,
+    Bang,
+    Percent,
+    DoubleEqual,
+    BangEqual,
+    And,
+    Not,
+    Or,
+    If,
+    Else,
+    Func,
+    Return,
+    Continue,
+    Loop,
+    While,
+    Break,
+    False,
+    True,
+    Var,
+    Do,
+    Ampersand,
+    DoubleAmper,
+    Pipe,
+    DoublePipe,
+    Null,
+    PlusEqual,
+    MinusEqual,
+    StarEqual,
+    SlashEqual,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token {
     pub kind: TokenType,
     pub span: (usize, usize),
 }
-pub trait TokenEq {
-    fn is(&self, kind: &TokenType) -> bool;
-    fn isnt(&self, kind: &TokenType) -> bool;
-}
+
 impl Token {
     pub fn new(kind: TokenType, span: Span) -> Self {
         Token { kind, span }
     }
 }
-impl TokenEq for Token {
-    fn is(&self, kind: &TokenType) -> bool {
-        &self.kind == kind
-    }
-    fn isnt(&self, kind: &TokenType) -> bool {
-        &self.kind != kind
-    }
-}
-type MaybeToken = Option<Token>;
-impl TokenEq for MaybeToken {
-    fn is(&self, kind: &TokenType) -> bool {
-        match self.clone() {
-            Some(tok) => &tok.kind == kind,
-            None => false,
-        }
-    }
-    fn isnt(&self, kind: &TokenType) -> bool {
-        match self.clone() {
-            Some(tok) => &tok.kind != kind,
-            None => false,
-        }
-    }
-}
 pub fn map_keyword(text: String) -> Option<TokenType> {
     match text.as_str() {
-        "true" => Some(TokenType::TRUE),
-        "false" => Some(TokenType::FALSE),
-        "if" => Some(TokenType::IF),
-        "else" => Some(TokenType::ELSE),
-        "func" => Some(TokenType::FUNC),
-        "return" => Some(TokenType::RETURN),
-        "loop" => Some(TokenType::LOOP),
-        "while" => Some(TokenType::WHILE),
-        "break" => Some(TokenType::BREAK),
-        "var" => Some(TokenType::VAR),
-        "and" => Some(TokenType::AND),
-        "not" => Some(TokenType::NOT),
-        "or" => Some(TokenType::OR),
-        "do" => Some(TokenType::DO),
-        "null" => Some(TokenType::NULL),
-        "struct" => Some(TokenType::STRUCT),
-        "continue" => Some(TokenType::CONTINUE),
-        "new" => Some(TokenType::NEW),
+        "true" => Some(TokenType::True),
+        "false" => Some(TokenType::False),
+        "if" => Some(TokenType::If),
+        "else" => Some(TokenType::Else),
+        "func" => Some(TokenType::Func),
+        "return" => Some(TokenType::Return),
+        "loop" => Some(TokenType::Loop),
+        "while" => Some(TokenType::While),
+        "break" => Some(TokenType::Break),
+        "var" => Some(TokenType::Var),
+        "and" => Some(TokenType::And),
+        "not" => Some(TokenType::Not),
+        "or" => Some(TokenType::Or),
+        "do" => Some(TokenType::Do),
+        "null" => Some(TokenType::Null),
+        "continue" => Some(TokenType::Continue),
         _ => None,
     }
 }
