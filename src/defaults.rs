@@ -1,6 +1,4 @@
-use crate::ast_nodes;
-use crate::Interpreter;
-use crate::Parser;
+use crate::nodes::ast_nodes;
 use ast_nodes::*;
 use std::collections::HashMap;
 use std::io;
@@ -59,13 +57,13 @@ pub fn var_map() -> VarMap {
                 arg_size: 1,
             }),
         ),
-        (
-            "eval".to_string(),
-            Value::BuiltinFunc(BuiltinFunc {
-                function: eval,
-                arg_size: 1,
-            }),
-        ),
+        // (
+        //     "eval".to_string(),
+        //     Value::BuiltinFunc(BuiltinFunc {
+        //         function: eval,
+        //         arg_size: 1,
+        //     }),
+        // ),
     ])
 }
 pub fn str_struct(val: String) -> Struct {
@@ -156,7 +154,7 @@ pub fn val_to_str(val: &Value) -> String {
         Value::Str(txt) => txt.to_string(),
         Value::Null => "null".to_string(),
         Value::Void => "void".to_string(),
-        Value::Control(val) => format!("{val:?}"),
+
         _ => "unnamed".to_string(),
     }
 }
@@ -227,20 +225,19 @@ pub fn input_builtin(_: VarMap, args: ValueStream) -> Value {
     }
     return Value::Str(String::from(result.trim()));
 }
-pub fn eval(_: VarMap, args: ValueStream) -> Value {
-    let Value::Str(source) = &args[0] else {return Value::Str("Expected a string".to_string());};
-    let mut parser = Parser::new(source.as_str());
-    let ast_result = parser.batch_parse_expr();
-    let Ok(ast) = ast_result else {
-        return Value::Null;
-    };
+// pub fn eval(_: VarMap, args: ValueStream) -> Value {
+//     let Value::Str(source) = &args[0] else {return Value::Str("Expected a string".to_string());};
+//     let mut parser = Parser::new(source.as_str());
+//     let ast_result = parser.batch_parse_expr();
+//     let Ok(ast) = ast_result else {
+//         return Value::Null;
+//     };
 
-    let Ok(result) = Interpreter::execute_node(ast) else {return Value::Null;};
-    let Value::Control(nevah) = result.0 else {return result.0;};
+//     let Ok(result) = Interpreter::execute_node(ast) else {return Value::Null;};
+//     let Value::Control(nevah) = result.0 else {return result.0;};
 
-    match nevah {
-        Control::Result(val, _) => *val,
-        Control::Return(val, _) => *val,
-        _ => Value::Null,
-    }
-}
+//     match nevah {
+//         Control::Return(val, _) => *val,
+//         _ => Value::Null,
+//     }
+// }

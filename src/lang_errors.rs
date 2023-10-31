@@ -1,4 +1,4 @@
-use crate::ast_nodes::*;
+use crate::nodes::ast_nodes::*;
 use crate::{spans::*, tokens::*};
 use colored::*;
 #[derive(Clone)]
@@ -51,7 +51,7 @@ pub enum ParseError {
     UnexpectedToplevel(Token),
     UnterminatedParetheses(Token),
     UnexpectedStreamEnd,
-    UnexpectedFieldNode(NodeSpan),
+    Placeholder(String),
 }
 impl LangError for ParseError {
     fn msg(&self) -> String {
@@ -64,7 +64,7 @@ impl LangError for ParseError {
             UnexpectedToplevel(_) => "Unexpected token at toplevel".to_string(),
             UnexpectedStreamEnd => "Expected To find another token but none was found".to_string(),
             UnterminatedParetheses(_) => "Unterminated parentheses".to_string(),
-            UnexpectedFieldNode(_) => "Invalid Node in struct feilds".to_string(),
+            Placeholder(name) => name.to_string(),
         }
     }
     fn print_msg(&self, err_out: ErrorBuilder) {
@@ -79,7 +79,10 @@ impl LangError for ParseError {
                 return;
             }
             UnterminatedParetheses(paren) => paren.span,
-            UnexpectedFieldNode(node) => node.span,
+            Placeholder(name) => {
+                println!("{name}");
+                return;
+            }
         };
         err_out.emit(self.msg().as_str(), span);
     }

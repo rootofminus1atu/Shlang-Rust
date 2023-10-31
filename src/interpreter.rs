@@ -1,4 +1,4 @@
-use crate::ast_nodes;
+use crate::nodes::ast_nodes;
 use crate::defaults;
 use crate::lang_errors::*;
 use crate::spans::*;
@@ -82,31 +82,7 @@ impl Interpreter {
             
         }
     }
-    // fn generic_calc<T>(
-    //     &self,
-    //     node: BinaryNode,
-    //     left_val: Value,
-    //     right_val: Value,
-    // ) -> Result<Value, IError> {
-        
-    //     let (left, left_bool) = self.num_convert(left_val, node.left.span)?;
-    //     let (right, right_bool) = self.num_convert(right_val, node.right.span)?;
-    //     match node.kind {
-    //         BinaryOp::ADD => Ok(Value::Num(left + right)),
-    //         BinaryOp::SUBTRACT => Ok(Value::Num(left - right)),
-    //         BinaryOp::MULTIPLY => Ok(Value::Num(left * right)),
-    //         BinaryOp::DIVIDE => Ok(Value::Num(left / right)),
-    //         BinaryOp::MODULO => Ok(Value::Num(left % right)),
-    //         BinaryOp::GREATER => Ok(Value::Bool(left > right)),
-    //         BinaryOp::GREATER_EQUAL => Ok(Value::Bool(left >= right)),
-    //         BinaryOp::LESSER => Ok(Value::Bool(left < right)),
-    //         BinaryOp::LESSER_EQUAL => Ok(Value::Bool(left <= right)),
-    //         BinaryOp::AND => Ok(Value::Bool(left_bool && right_bool)),
-    //         BinaryOp::OR => Ok(Value::Bool(left_bool || right_bool)),
-    //         BinaryOp::ISEQUAL => Ok(Value::Bool(left == right)),
-    //         BinaryOp::ISDIFERENT => Ok(Value::Bool(left != right)),
-    //     }
-    // }
+    
     fn binary_calc(
         &self,
         node: BinaryNode,

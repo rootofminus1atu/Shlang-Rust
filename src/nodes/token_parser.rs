@@ -57,14 +57,6 @@ impl<'input> Parser<'input, TokenIter<'input>> {
         text = String::from_iter(idk);
         Value::Num(text.parse().unwrap())
     }
-
-    pub fn parse_float(&mut self, token: &Token) -> Value {
-        Value::Float(self.filtered_text(token, '_').parse().unwrap())
-    }
-    pub fn parse_int(&mut self, token: &Token) -> Value {
-        Value::Int(self.filtered_text(token, '_').parse().unwrap())
-    }
-
     // A hack used to fix most escape charaters
     pub fn escaped_text(&mut self, token: &Token) -> String {
         self.input[token.span.0..token.span.1]
@@ -81,7 +73,7 @@ impl<'input> Parser<'input, TokenIter<'input>> {
     }
     // peeks the current token and if none was found it prints and returns an error
     // this is used for expressions that require the existence of a current token
-    fn peek_some(&mut self) -> TokenResult {
+    fn peek_some(&mut self) -> Result<Token, ParseError> {
         let Some(peeked) = self.tokens.peek().cloned() else {
             return Err(ParseError::UnexpectedStreamEnd);
         };
@@ -601,8 +593,6 @@ impl<'input> Parser<'input, TokenIter<'input>> {
             TokenType::STRUCT => self.parse_struct(),
             TokenType::VAR => self.parse_vardef(),
             TokenType::NUM => Ok(self.parse_num(value).to_nodespan(value.span)),
-            TokenType::INT => Ok(self.parse_int(value).to_nodespan(value.span)),
-            TokenType::FLOAT => Ok(self.parse_float(value).to_nodespan(value.span)),
             TokenType::FALSE => Ok(Value::Bool(false).to_nodespan(value.span)),
             TokenType::TRUE => Ok(Value::Bool(true).to_nodespan(value.span)),
             TokenType::NULL => Ok(Value::Null.to_nodespan(value.span)),

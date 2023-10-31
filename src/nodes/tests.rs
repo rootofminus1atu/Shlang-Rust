@@ -1,16 +1,11 @@
-use crate::ast_nodes;
-use crate::token_parser::ParseResult;
-use crate::Parser;
-use ast_nodes::*;
+use super::ast_nodes;
 use insta::*;
 use std::*;
-fn parse_full(source: &str) -> BlockSpan {
-    let mut parser = Parser::new(source);
-    parser.batch_parse().unwrap()
+fn parse_full(source: &str) {
+    todo!()
 }
-fn parse_expr(source: &str) -> ParseResult {
-    let mut parser = Parser::new(source);
-    parser.parse_expr()
+fn parse_expr(source: &str) {
+    todo!()
 }
 macro_rules! test_func {
     ($func:expr,($($name:ident : $input:expr)*)) => {

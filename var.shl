@@ -1,3 +1,4 @@
+#*
 struct Node {
     var next;
     var data = null;
@@ -29,10 +30,18 @@ struct Node {
         return next.get(pos);
     }
 }
+*#
 func abc(){
     return;
 }
+func fuck(){
+    var a = 1;
+    return func(){
+        return a;
+    };
+}
 var main_a = do {
-    
-    println(eval("if true {1}"));
+    var a = 2;
+    var f = fuck();
+    println(f());
 };

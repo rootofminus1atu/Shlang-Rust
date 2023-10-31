@@ -1,24 +1,15 @@
+use colored::Colorize;
+
+use lang_errors::ErrorBuilder;
+use lang_errors::*;
+use nodes::parse::Parser;
 use std::env;
 use std::fs;
 use std::io;
 use std::io::Write;
 use std::*;
-
-pub mod ast_nodes;
-pub mod defaults;
-pub mod interpreter;
-pub mod lang_errors;
-pub mod spans;
-pub mod tests;
-pub mod token_lexer;
-pub mod token_parser;
-pub mod tokens;
-use colored::Colorize;
-use interpreter::Interpreter;
-use lang_errors::ErrorBuilder;
-use lang_errors::*;
 use token_lexer::Lexer;
-use token_parser::Parser;
+use Shlang::*;
 fn input(message: &str) -> String {
     print!("{message} ");
     io::stdout().flush().unwrap();
